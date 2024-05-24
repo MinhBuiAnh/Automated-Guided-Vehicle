@@ -4,7 +4,7 @@ using namespace std;
 
 Ward::Ward()
 {
-    this->name = 'A';
+    this->name = "A";
     this->entry.x = 0;
     this->entry.y = 0;
     this->exit.x = 0;
@@ -19,7 +19,7 @@ Ward::Ward()
     this->low_right.y = 0;
 }
 
-char Ward::getName(){
+string Ward::getName(){
     return this->name;
 }
 
@@ -47,7 +47,7 @@ Point Ward::getLowRight(){
     return this->low_right;
 }
 
-void Ward::setName(char name){
+void Ward::setName(std::string name){
     this->name = name;
 }
 

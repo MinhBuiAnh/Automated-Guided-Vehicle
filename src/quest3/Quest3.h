@@ -15,6 +15,7 @@ class Quest3{
         int M;
         int single;
         int triple;
+        std::vector<Ward> listWards;
         std::vector<Personel> listPersonels;
         std::vector<Patient> listPatients;
         std::vector<Visitor> listVisitors;
@@ -40,11 +41,13 @@ class Quest3{
 
         int getTriple();
 
-        std::vector<Personel> getlistPersonel();
+        std::vector<Ward> getListWards();
 
-        std::vector<Patient> getlistPatients();
+        std::vector<Personel> getListPersonel();
 
-        std::vector<Visitor> getlistVisitors();
+        std::vector<Patient> getListPatients();
+
+        std::vector<Visitor> getListVisitors();
 
         void setM(int M);
 
@@ -52,11 +55,13 @@ class Quest3{
 
         void setTriple(int triple);
 
-        void setlistPersonels(std::vector<Personel> &listPersonels);
+        void setListWards(std::vector<Ward> &listWards);
 
-        void setlistPatients(std::vector<Patient> &listPatients);
+        void setListPersonels(std::vector<Personel> &listPersonels);
 
-        void setlistVisitors(std::vector<Visitor> &listVisitors);
+        void setListPatients(std::vector<Patient> &listPatients);
+
+        void setListVisitors(std::vector<Visitor> &listVisitors);
 
         double calculateMean(const std::vector<double> &sample);
 
@@ -68,13 +73,13 @@ class Quest3{
 
         void setPersonality();
 
-        std::vector< std::vector<Event> > setEvents(int k1, int k2);
+        std::vector< std::vector<Event> > setEvents(int n);
 
         void setListAgeOrAllTimeDist(int N, int k, double min_value, double max_value, int type);
         
         void setListEvents(int N, int k, double min_value, double max_value, int num_of_fields);
         
-        void setListPedestrians(json inputData);
+        void setListPedestrians(int numOfAgents);
 };
 
 #endif

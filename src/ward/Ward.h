@@ -1,6 +1,8 @@
 #ifndef WARD_H
 #define WARD_H
 
+#include <string>
+
 struct Point
 {
     double x;
@@ -10,7 +12,7 @@ struct Point
 class Ward
 {
     protected:
-        char name;
+        std::string name;
         Point entry;
         Point exit;
         Point top_left;
@@ -20,7 +22,7 @@ class Ward
     public:
         Ward();
         // ~Ward();
-        char getName();
+        std::string getName();
 
         Point getEntry();
 
@@ -34,7 +36,7 @@ class Ward
 
         Point getLowLeft();
 
-        void setName(char name);
+        void setName(std::string name);
 
         void setEntry(double x, double y);
 

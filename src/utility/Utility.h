@@ -8,6 +8,7 @@
 #include "lib/vecmath/vecmath.h"
 #include <map>
 #include "src/agv/AGV.h"
+#include "src/ward/Ward.h"
 
 using json = nlohmann::json;
 
@@ -17,6 +18,8 @@ namespace Utility
     float randomFloat(float lowerBound, float upperBound);
 
     std::map<std::string, std::vector<float>> readMapData(const char *fileName);
+
+    std::vector<Ward> readHospitalData(const char *fileName);
 
     std::vector<json> convertMapData(std::map<std::string, std::vector<float>> mapData);
 

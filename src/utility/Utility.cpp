@@ -36,7 +36,6 @@ std::map<std::string, std::vector<float>> Utility::readMapData(
     ifstream input(fileName);
 
     std::string delimiter = " ";
-
     int lineNo = 1;
 
     for (std::string line; getline(input, line);)
@@ -84,6 +83,70 @@ std::map<std::string, std::vector<float>> Utility::readMapData(
     }
 
     return map;
+}
+
+std::vector<Ward> Utility::readHospitalData(const char *fileName) {
+    vector<Ward> listWards;
+    ifstream input(fileName);
+
+    int N;
+    double entryX, entryY, exitX, exitY, width;
+    double topLeftX, topLeftY, topRightX, topRightY;
+    double lowLeftX, lowLeftY, lowRightX, lowRightY;
+    std::string delimiter = " ";
+    int lineNo = 1;
+
+    for (std::string line; getline(input, line);) {
+        if (lineNo == 1) {
+            N = std::stoi(line);
+        }
+        else if (lineNo <= N + 1) {
+            size_t pos = 0;
+            std::string token;
+            int cnt = 0;
+            
+            Ward *w = new Ward();
+
+            while ((pos = line.find(delimiter)) != std::string::npos) {
+                token = line.substr(0, pos);
+
+                switch (cnt) {
+                    case 0: { entryX = stod(token); break; }
+                    case 1: { entryY = stod(token); break; }
+                    case 2: { exitX = stod(token); break; }
+                    case 3: { exitY = stod(token); break; }
+                    case 4: { width = stod(token); break; }
+                }
+
+                line.erase(0, pos + delimiter.length());
+                cnt++;
+            }
+            w->setName(line);
+            w->setEntry(entryX, entryY);
+            w->setExit(exitX, exitY);
+            
+            topLeftX = lowLeftX = entryX - width / 2;
+            topRightX = lowRightX = entryX + width / 2;
+            if (entryY > exitY) {
+                topLeftY = topRightY = exitY;
+                lowLeftY = lowRightY = entryY;
+            }
+            else {
+                topLeftY = topRightY = entryY;
+                lowLeftY = lowRightY = exitY;
+            }
+            w->setTopLeft(topLeftX, topLeftY);
+            w->setTopRight(topRightX, topRightY);
+            w->setLowLeft(lowLeftX, lowLeftY);
+            w->setLowRight(lowRightX, lowRightY);
+            
+            listWards.push_back(*w);
+        }
+
+        lineNo++;
+    }
+
+    return listWards;
 }
 
 std::vector<json> Utility::convertMapData(

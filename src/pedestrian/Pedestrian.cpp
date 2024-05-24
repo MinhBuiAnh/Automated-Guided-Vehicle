@@ -49,7 +49,7 @@ Emotion Pedestrian::getEmotion(){
     return this->emotion;
 }
 
-std::vector<Event> Pedestrian::getEvents(){
+std::vector< std::vector<Event> > Pedestrian::getEvents(){
     return this->events;
 }
 
@@ -130,8 +130,16 @@ Patient::Patient(Walkability walkability) : Pedestrian(){
     this->walkability = walkability;
 }
 
+void Patient::setWalkability(Walkability walkability){
+    this->walkability = walkability;
+}
+
 Visitor::Visitor() : Pedestrian(){
     this->walkability = noDisability;
+}
+
+void Visitor::setWalkability(Walkability walkability){
+    this->walkability = walkability;
 }
 
 Personel::Personel() : Pedestrian(){

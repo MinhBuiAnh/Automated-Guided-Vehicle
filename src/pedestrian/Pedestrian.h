@@ -96,7 +96,7 @@ public:
     void setTempPoints(Point tempPoints);
 };
 
-class Patient:Pedestrian
+class Patient: public Pedestrian
 {
 private:
     Walkability walkability;
@@ -109,7 +109,7 @@ public:
     void setWalkability(Walkability walkability);
 };
 
-class Visitor:Pedestrian
+class Visitor: public Pedestrian
 {
 private:
     Walkability walkability;
@@ -121,7 +121,7 @@ public:
     void setWalkability(Walkability walkability);
 };
 
-class Personel:Pedestrian
+class Personel: public Pedestrian
 {
 private:
 public:

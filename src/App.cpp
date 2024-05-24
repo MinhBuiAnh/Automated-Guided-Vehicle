@@ -10,6 +10,7 @@
 #include "model/SocialForce.h"
 #include "constant/Constant.h"
 #include "renderer/Renderer.h"
+#include "quest3/Quest3.h"
 
 using namespace std;
 using namespace Constant;
@@ -103,6 +104,8 @@ int main(int argc, char **argv)
     } else if ((int)inputData["runMode"]["value"] == 3){
         int numOfAgents = (int)inputData["numOfAgents"]["value"];
         cout << "Number of Agent: " <<  numOfAgents << endl;
+        Quest3 *q3 = new Quest3();
+        q3->setListPedestrians(numOfAgents);
     }
     else
     {

@@ -9,9 +9,13 @@
 #include "src/ward/Ward.h"
 #include "src/event/Event.h"
 #include "src/pedestrian/Pedestrian.h"
+#include "src/utility/Utility.h"
 
 Quest3::Quest3() {
     this->M = 0;
+    this->single = 0;
+    this->triple = 0;
+    this->listWards = std::vector<Ward>();
     this->listPersonels = std::vector<Personel>();
     this->listPatients = std::vector<Patient>();
     this->listVisitors = std::vector<Visitor>();
@@ -21,15 +25,27 @@ int Quest3::getM() {
     return this->M;
 }
 
-std::vector<Personel> Quest3::getlistPersonel() {
+int Quest3::getSingle() {
+    return this->single;
+}
+
+int Quest3::getTriple() {
+    return this->triple;
+}
+
+std::vector<Ward> Quest3::getListWards() {
+    return this->listWards;
+}
+
+std::vector<Personel> Quest3::getListPersonel() {
     return this->listPersonels;
 }
 
-std::vector<Patient> Quest3::getlistPatients() {
+std::vector<Patient> Quest3::getListPatients() {
     return this->listPatients;
 }
 
-std::vector<Visitor> Quest3::getlistVisitors() {
+std::vector<Visitor> Quest3::getListVisitors() {
     return this->listVisitors;
 }
 
@@ -37,15 +53,19 @@ void Quest3::setM(int M) {
     this->M = M;
 }
 
-void Quest3::setlistPersonels(std::vector<Personel> &listPersonels) {
+void Quest3::setListWards(std::vector<Ward> &listWards) {
+    this->listWards = listWards;
+}
+
+void Quest3::setListPersonels(std::vector<Personel> &listPersonels) {
     this->listPersonels = listPersonels;
 }
 
-void Quest3::setlistPatients(std::vector<Patient> &listPatients) {
+void Quest3::setListPatients(std::vector<Patient> &listPatients) {
     this->listPatients = listPatients;
 }
 
-void Quest3::setlistVisitors(std::vector<Visitor> &listVisitors) {
+void Quest3::setListVisitors(std::vector<Visitor> &listVisitors) {
     this->listVisitors = listVisitors;
 }
 
@@ -55,7 +75,7 @@ double Quest3::calculateMean(const std::vector<double>& sample) {
     for (double value : sample) {
         sum += value;
     }
-    return sum / vec.size();
+    return sum / sample.size();
 }
 
 // Hàm tính độ lệch chuẩn của vector
@@ -89,7 +109,7 @@ void Quest3::setRole() {
         if (listAge[u] >= 23 && listAge[u] <= 61) {
             if (selected[u] == false) {
                 selected[u] = true;
-                role[u] = "Personel"
+                role[u] = "Personel";
                 --numPersonel;
             }
         }
@@ -108,6 +128,8 @@ void Quest3::setRole() {
 // Set walkability
 void Quest3::setWalkability() {
     std::vector<int> walkabilityType(M);
+
+    std::default_random_engine gnr;
     std::uniform_int_distribution<int> dist3(1, 5);
     for (int v = 0; v < M; v++) {
         int u = dist3(gnr);
@@ -121,7 +143,9 @@ void Quest3::setPersonality() {
     for (int v : listAge) {
         if (v < 11) ++peopleUnder11;
     }
-    double under11Percentage = round(peopleUnder11 * 100 / n);
+    double under11Percentage = round(peopleUnder11 * 100 / M);
+
+    std::uniform_int_distribution<int> dist1(0, M - 1);
 
     personalityType.resize(M);
     if (under11Percentage > 55) {
@@ -136,23 +160,25 @@ void Quest3::setPersonality() {
     }
     else {
         std::default_random_engine gnr;
-        std::uniform_int_distribution<int> dist4(45, 55);
+        std::uniform_int_distribution<int> dist2(45, 55);
 
-        int u = dist4(gnr);
+        int u = dist2(gnr);
         int neuroticPeople = M * u / 100;
         if (u == 45) ++neuroticPeople;
 
+        bool selected[M];
+
         while (neuroticPeople) {
             int v = dist1(gnr);
-            if (listAge[v] >= 11 && selected[v] == true) {
+            if (listAge[v] >= 11 && selected[v] == false) {
                 selected[v] = false;
-                personalities[v] = "neurotic";
+                personalityType[v] = "neurotic";
                 --neuroticPeople;
             }
         }
 
         for (int v = 0; v < M; v++)
-            if (personalities[v] == "") personalities[v] = "open";
+            if (selected[v] == false) personalityType[v] = "open";
     }
 }
 
@@ -163,7 +189,7 @@ std::vector< std::vector<Event> > Quest3::setEvents(int n) {
 
     std::vector< std::vector<Event> > events(6);
     for (int u = 0; u < 20; u++) {
-        int x = dist1(gnr);
+        int x = dist(gnr);
 
         Event e1, e2, e3, e4, e5, e6;
         e1.setIntensity(allEvents[0][x]); e2.setIntensity(allEvents[1][x]);
@@ -182,9 +208,9 @@ std::vector< std::vector<Event> > Quest3::setEvents(int n) {
     return events;
 }
 
-// For age and all time distances distriburions
+// For age and all events' time distances distriburions
 // type = 1: age distribution
-// type = 2: all time distances distribution
+// type = 2: all events' time distances distribution
 void Quest3::setListAgeOrAllTimeDist(int N, int k, double min_value, double max_value, int type) {
     // Generate random numbers
     std::random_device rd;
@@ -192,39 +218,35 @@ void Quest3::setListAgeOrAllTimeDist(int N, int k, double min_value, double max_
     std::normal_distribution<double> distribution((min_value + max_value) / 2,
         (max_value - min_value) / 6);
     
-    std::vector<double> sample;
-    // Generate data sample
-    for (int i = 0; i < N; ++i) {
-        sample.push_back(round(distribution(gen)));
+    bool followDist = false;
+    while (followDist == false) { // Generate samples until it follows normal distribution
+        std::vector<double> sample(N);
+        // Generate data sample
+        for (int i = 0; i < N; ++i) {
+            sample[i] = std::round(distribution(gen));
+        }
+
+        // Calculate mean value and standard deviation
+        double mean = calculateMean(sample);
+        double stdDev = calculateStdDev(sample, mean);
+
+        // Calculate p-value
+        double z = (mean - ((min_value + max_value) / 2)) / (stdDev / sqrt(N));
+        double p_value = 2 * (1 - 0.5 * (1 + erf(fabs(z) / sqrt(2))));
+
+        // Set significance level to 0.05
+        /* If p-value is less than the significance level, reject the null hypothesis
+        and conclude the sample data does not follow normal distribution */
+        /* If p-value is greater than or equal to the significance level, do not reject
+        the null hypothesis and conclude the sample data follows normal distribution */
+        double alpha = 0.05;
+        if (p_value >= alpha) {
+            followDist = true;
+
+            if (type == 1) listAge = sample;
+            else allTimeDistances = sample;
+        }
     }
-
-    // Calculate mean value and standard deviation
-    double mean = calculateMean(sample);
-    double stdDev = calculateStdDev(sample, mean);
-
-    // Calculate p-value
-    double z = (mean - ((min_value + max_value) / 2)) / (stdDev / sqrt(N));
-    double p_value = 2 * (1 - 0.5 * (1 + erf(fabs(z) / sqrt(2))));
-
-    // Print p-value
-    std::cout << "p-value: " << p_value << std::endl;
-
-    // Set significance level to 0.05
-    /* If p-value is less than the significance level, reject the null hypothesis
-    and conclude the sample data does not follow normal distribution */
-    /* If p-value is greater than or equal to the significance level, do not reject
-    the null hypothesis and conclude the sample data follows normal distribution */
-    double alpha = 0.05;
-    if (p_value < alpha) {
-        std::cout << "Sample data does not follow normal distribution" << std::endl;
-        return;
-    }
-    else {
-        std::cout << "Sample data follows normal distribution" << std::endl;
-    }
-
-    if (type == 1) listAge = sample;
-    else allTimeDistances = sample;
 }
 
 // For all events distribution
@@ -236,36 +258,36 @@ void Quest3::setListEvents(int N, int k, double min_value,
     std::normal_distribution<double> distribution((min_value + max_value) / 2,
         (max_value - min_value) / 6);
     
+    bool followDist;
     std::vector< std::vector<double> > listEvents;
-    for (int i = 0; i < num_of_fields; i++) {
-        // Generate random sample following normal distribution
-        std::vector<double> sample(N);
-        for (int j = 0; j < N; j++)
-            sample[j] = std::round(distribution(gen) * 10) / 10;
-        
-        double mean = calculateMean(sample);
-    	double stdDev = calculateStdDev(sample, mean);
-    	
-    	// Calculate p-value
-		double z = (mean - ((min_value + max_value) / 2)) / (stdDev / sqrt(N));
-		double p_value = 2 * (1 - 0.5 * (1 + erf(fabs(z) / sqrt(2))));
-        
-        // Print the p-value
-        std::cout << "p-value: " << p_value << std::endl;
+    for (int i = 0; i < num_of_fields; i++) { // Generate samples for 6 types of emotion
+        followDist = false;
 
-        // Set the significance level to 0.05
-        double alpha = 0.05;
-        if (p_value < alpha) {
-            std::cout << "Sample data does not follow normal distribution" << std::endl;
-            return;
-        }
-		else {
-            std::cout << "Sample data follows normal distribution" << std::endl;
-            listEvents.push_back(sample);
+        while (followDist == false) { // Generate random sample until it follows normal distribution
+            // Generate random sample following normal distribution
+            std::vector<double> sample(N);
+            for (int j = 0; j < N; j++)
+                sample[j] = std::round(distribution(gen) * 10) / 10;
+            
+            //Calculate mean value and standard deviation
+            double mean = calculateMean(sample);
+            double stdDev = calculateStdDev(sample, mean);
+            
+            // Calculate p-value
+            double z = (mean - ((min_value + max_value) / 2)) / (stdDev / sqrt(N));
+            double p_value = 2 * (1 - 0.5 * (1 + erf(fabs(z) / sqrt(2))));
+            
+            // Set the significance level to 0.05
+            double alpha = 0.05;
+            if (p_value >= alpha) {
+                followDist = true;
+                listEvents.push_back(sample);
+            }
         }
     }
 
-    // Adjust the values so that a negative impact on one emotion also has a negative impact on the other emotions
+    /* Adjust the values so that a negative impact on one emotion also has a negative impact
+    on the other emotions */
     for (int i = 0; i < N; i++) {
         if (listEvents[0][i] < 0) {
             for (int j = 0; j < num_of_fields; j++) listEvents[j][i] = -std::abs(listEvents[j][i]);
@@ -278,38 +300,38 @@ void Quest3::setListEvents(int N, int k, double min_value,
     allEvents = listEvents;
 }
 
-void Quest3::setListPedestrians(json inputData) {
-    M = inputData["numOfAgents"]["value"];
-    int k = 100;
-    double min_value = 5.0;
-    double max_value = 104.0;
+// Generate a list of all pedestrians
+void Quest3::setListPedestrians(int numOfAgents) {
+    // Number of agents
+    M = numOfAgents;
+    listWards = Utility::readHospitalData("data/hospital.txt");
 
     // Generate age
-    setListAgeOrAllTimeDist(M, k, min_value, max_value, 1);
+    setListAgeOrAllTimeDist(M, 100, 5, 104, 1);
 
     // Set role, walkability and personality
-    // TODO: set start ward and end ward
+    // TODO: set start ward and end ward for personels
     setRole();
     setWalkability();
     setPersonality();
 
-    int n = 43;
-    k = 200;
-    min_value = -1.0;
-    max_value = 1.0;
-    int num_of_fields = 6;
-
     // Generate events list
-    setListEvents(n, k, min_value, max_value, num_of_fields);
+    setListEvents(43, 200, -1.0, 1.0, 6);
 
-    min_value = 100;
-    max_value = 3600;
+    // Generate all events' time distances list
+    setListAgeOrAllTimeDist(43, 200, 4, 10, 2);
 
-    // Generate 
-    setListAgeOrAllTimeDist(n, k, min_value, max_value, 2);
+    std::default_random_engine gnr;
+    std::uniform_int_distribution<int> dist(1, 2);
 
+    // One person's emotions and walkability
     Emotion e;
     Walkability w;
+
+    // Pedestrian's velocities
+    /* From left to right: noDisability (no overtaking), noDisability (overtaking), crutches,
+    sticks, wheelchairs, blind */
+    const double vel[] = { 1.24, 2.48, 0.94, 0.81, 0.69, 0.52 };
 
     // Open personality
     Personality po;
@@ -317,7 +339,7 @@ void Quest3::setListPedestrians(json inputData) {
     po.postitiveEmotionThreshold = 0.7;
     po.negativeEmotionThreshold = -0.3;
     
-    // Neurrotic personality
+    // Neurotic personality
     Personality pn;
     pn.lambda = 4;
     pn.postitiveEmotionThreshold = 0.6;
@@ -325,8 +347,9 @@ void Quest3::setListPedestrians(json inputData) {
     
     for (int v = 0; v < M; v++) {
         std::vector< std::vector<Event> > events;
+        int x = dist(gnr);
 
-        if (role[v] == "Personel") {
+        if (role[v] == "Personel") { // For personel
             Personel *p = new Personel();
             p->setAge(listAge[v]);
 
@@ -334,14 +357,14 @@ void Quest3::setListPedestrians(json inputData) {
             else p->setPersonality(pn);
 
             p->setEmotion(e);
-            events = setEvents(k1, k2);
+            p->setVelocity(vel[x - 1]);
+            events = setEvents(43);
             p->setEvents(events);
 
             listPersonels.push_back(*p);
         }
-        else {
-            if (role[v] == "Patient") Patient *p = new Patient();
-            else Visitor *p = new Visitor();
+        else if (role[v] == "Patient") { // For patient
+            Patient *p = new Patient();
 
             p->setAge(listAge[v]);
 
@@ -351,18 +374,61 @@ void Quest3::setListPedestrians(json inputData) {
             p->setEmotion(e);
 
             switch (walkabilityType[v]) {
-                case 1: { w = noDisability; p->setWalkability(w); break; }
-                case 2: { w = crutches; p->setWalkability(w); break; }
-                case 3: { w = sticks; p->setWalkability(w); break; }
-                case 4: { w = wheelchairs; p->setWalkability(w); break; }
-                case 5: { w = blind; p->setWalkability(w); break; }
+                case 1: { w = noDisability; p->setWalkability(w); p->setVelocity(vel[x - 1]); break; }
+                case 2: { w = crutches; p->setWalkability(w); p->setVelocity(vel[2]); break; }
+                case 3: { w = sticks; p->setWalkability(w); p->setVelocity(vel[3]); break; }
+                case 4: { w = wheelchairs; p->setWalkability(w); p->setVelocity(vel[4]); break; }
+                case 5: { w = blind; p->setWalkability(w); p->setVelocity(vel[5]); break; }
             }
 
-            events = setEvents(n);
+            Ward *wd = new Ward();
+            p->setStart(*wd);
+            p->setEnd(*wd);
+
+            events = setEvents(43);
             p->setEvents(events);
 
-            if (role[v] == "Patient") listPatients.push_back(*p);
-            else listVisitors.push_back(*p);
+            listPatients.push_back(*p);
+        }
+        else { // For visitor
+            Visitor *p = new Visitor();
+
+            p->setAge(listAge[v]);
+
+            if (personalityType[v] == "open") p->setPersonality(po);
+            else p->setPersonality(pn);
+
+            p->setEmotion(e);
+
+            switch (walkabilityType[v]) {
+                case 1: { w = noDisability; p->setWalkability(w); p->setVelocity(vel[x - 1]); break; }
+                case 2: { w = crutches; p->setWalkability(w); p->setVelocity(vel[2]); break; }
+                case 3: { w = sticks; p->setWalkability(w); p->setVelocity(vel[3]); break; }
+                case 4: { w = wheelchairs; p->setWalkability(w); p->setVelocity(vel[4]); break; }
+                case 5: { w = blind; p->setWalkability(w); p->setVelocity(vel[5]); break; }
+            }
+
+            Ward *wd = new Ward();
+            p->setStart(*wd);
+            p->setEnd(*wd);
+
+            events = setEvents(43);
+            p->setEvents(events);
+
+            listVisitors.push_back(*p);
+        }
+    }
+
+    // single: number of visitors
+    // triple: number of people who are not visitors
+    single = listVisitors.size();
+    triple = M - single;
+
+    for (int v = 0; v < listPersonels.size(); v++) {
+        std::vector< std::vector<Event> > tmp = listPersonels[v].getEvents();
+
+        for (int u = 0; u < 20; u++) {
+            std::cout << tmp[0][u].getIntensity() << " " << tmp[0][u].getTime() << std::endl;
         }
     }
 }
