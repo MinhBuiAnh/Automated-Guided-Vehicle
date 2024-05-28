@@ -104,8 +104,8 @@ int main(int argc, char **argv)
     } else if ((int)inputData["runMode"]["value"] == 3){
         int numOfAgents = (int)inputData["numOfAgents"]["value"];
         cout << "Number of Agent: " <<  numOfAgents << endl;
-        Quest3 *q3 = new Quest3();
-        q3->setListPedestrians(numOfAgents);
+        //Quest3 *q3 = new Quest3();
+        //q3->setListAgeOrAllTimeDist(numOfAgents, 100, 5, 104, 1);
     }
     else
     {

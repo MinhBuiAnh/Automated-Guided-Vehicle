@@ -35,6 +35,8 @@ class Quest3{
 
         std::vector<double> allTimeDistances;
 
+        double under11Percentage;
+
         int getM();
 
         int getSingle();

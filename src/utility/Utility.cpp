@@ -141,6 +141,8 @@ std::vector<Ward> Utility::readHospitalData(const char *fileName) {
             w->setLowRight(lowRightX, lowRightY);
             
             listWards.push_back(*w);
+
+            delete w;
         }
 
         lineNo++;

@@ -69,7 +69,7 @@ void Quest3::setListVisitors(std::vector<Visitor> &listVisitors) {
     this->listVisitors = listVisitors;
 }
 
-// Hàm tính giá trị trung bình của vector
+// Vector's mean value
 double Quest3::calculateMean(const std::vector<double>& sample) {
     double sum = 0.0;
     for (double value : sample) {
@@ -78,7 +78,7 @@ double Quest3::calculateMean(const std::vector<double>& sample) {
     return sum / sample.size();
 }
 
-// Hàm tính độ lệch chuẩn của vector
+// Vector's standard deviation
 double Quest3::calculateStdDev(const std::vector<double>& sample, double mean) {
     double variance = 0.0;
     for (double value : sample) {
@@ -99,13 +99,14 @@ void Quest3::setRole() {
     int numPersonel = (M - peopleUnder23 - peopleOver61) * 2 / 5;
 
     std::default_random_engine gnr;
-    std::uniform_int_distribution<int> dist1(0, M - 1);
+    std::uniform_int_distribution<int> dist1(1, M);
     std::uniform_int_distribution<int> dist2(1, 2);
 
-    bool selected[M];
+    int u;
+    bool selected[M] = {};
     role.resize(M);
     while (numPersonel) {
-        int u = dist1(gnr);
+        u = dist1(gnr); --u;
         if (listAge[u] >= 23 && listAge[u] <= 61) {
             if (selected[u] == false) {
                 selected[u] = true;
@@ -116,62 +117,55 @@ void Quest3::setRole() {
     }
     for (int v = 0; v < M; v++) {
         if (selected[v] == false) {
-            selected[v] = true;
-
-            int u = dist2(gnr);
-            if (u == 1) role[u] = "Patient";
-            else role[u] = "Visitor";
+            u = dist2(gnr);
+            if (u == 1) role[v] = "Patient";
+            else role[v] = "Visitor";
         }
     }
 }
 
 // Set walkability
 void Quest3::setWalkability() {
-    std::vector<int> walkabilityType(M);
+    walkabilityType.resize(M);
+    int u;
 
     std::default_random_engine gnr;
-    std::uniform_int_distribution<int> dist3(1, 5);
+    std::uniform_int_distribution<int> dist(1, 5);
     for (int v = 0; v < M; v++) {
-        int u = dist3(gnr);
-        walkabilityType[v] = u;
+        if (role[v] == "Personel") walkabilityType[v] = 0;
+    	else {
+    		u = dist(gnr);
+        	walkabilityType[v] = u;
+		}
     }
 }
 
 // Set personality
 void Quest3::setPersonality() {
-    int peopleUnder11 = 0;
-    for (int v : listAge) {
-        if (v < 11) ++peopleUnder11;
-    }
-    double under11Percentage = round(peopleUnder11 * 100 / M);
-
-    std::uniform_int_distribution<int> dist1(0, M - 1);
+    std::default_random_engine gnr;
+    std::uniform_int_distribution<int> dist1(1, M);
 
     personalityType.resize(M);
-    if (under11Percentage > 55) {
-        std::cout << "Error: Percentage of people under 11 years old exceeds 55%";
-        return;
-    }
-    else if (under11Percentage >= 45) {
+    
+    if (under11Percentage >= 45) {
         for (int v = 0; v < M; v++) {
             if (listAge[v] < 11) personalityType[v] = "open";
             else personalityType[v] = "neurotic";
         }
     }
     else {
-        std::default_random_engine gnr;
         std::uniform_int_distribution<int> dist2(45, 55);
 
         int u = dist2(gnr);
         int neuroticPeople = M * u / 100;
         if (u == 45) ++neuroticPeople;
 
-        bool selected[M];
-
+        int v;
+        bool selected[M] = {};
         while (neuroticPeople) {
-            int v = dist1(gnr);
+            v = dist1(gnr); --v;
             if (listAge[v] >= 11 && selected[v] == false) {
-                selected[v] = false;
+                selected[v] = true;
                 personalityType[v] = "neurotic";
                 --neuroticPeople;
             }
@@ -185,11 +179,12 @@ void Quest3::setPersonality() {
 // Set pedestrian's events
 std::vector< std::vector<Event> > Quest3::setEvents(int n) {
     std::default_random_engine gnr;
-    std::uniform_int_distribution<int> dist(0, n - 1);
+    std::uniform_int_distribution<int> dist(1, n);
 
+    int x;
     std::vector< std::vector<Event> > events(6);
     for (int u = 0; u < 20; u++) {
-        int x = dist(gnr);
+        x = dist(gnr); --x;
 
         Event e1, e2, e3, e4, e5, e6;
         e1.setIntensity(allEvents[0][x]); e2.setIntensity(allEvents[1][x]);
@@ -241,10 +236,22 @@ void Quest3::setListAgeOrAllTimeDist(int N, int k, double min_value, double max_
         the null hypothesis and conclude the sample data follows normal distribution */
         double alpha = 0.05;
         if (p_value >= alpha) {
-            followDist = true;
-
-            if (type == 1) listAge = sample;
-            else allTimeDistances = sample;
+            if (type == 1) {
+            	int peopleUnder11 = 0;
+			    for (int v : listAge) {
+			        if (v < 11) ++peopleUnder11;
+			    }
+			    under11Percentage = round(peopleUnder11 * 100 / M);
+			    
+			    if (under11Percentage <= 55) {
+			    	followDist = true;
+			    	listAge = sample;
+				}
+			}
+            else {
+            	followDist = true;
+            	allTimeDistances = sample;
+			}
         }
     }
 }
@@ -362,6 +369,8 @@ void Quest3::setListPedestrians(int numOfAgents) {
             p->setEvents(events);
 
             listPersonels.push_back(*p);
+
+            delete p;
         }
         else if (role[v] == "Patient") { // For patient
             Patient *p = new Patient();
@@ -389,6 +398,9 @@ void Quest3::setListPedestrians(int numOfAgents) {
             p->setEvents(events);
 
             listPatients.push_back(*p);
+
+            delete wd;
+            delete p;
         }
         else { // For visitor
             Visitor *p = new Visitor();
@@ -416,6 +428,9 @@ void Quest3::setListPedestrians(int numOfAgents) {
             p->setEvents(events);
 
             listVisitors.push_back(*p);
+
+            delete wd;
+            delete p;
         }
     }
 
@@ -423,12 +438,4 @@ void Quest3::setListPedestrians(int numOfAgents) {
     // triple: number of people who are not visitors
     single = listVisitors.size();
     triple = M - single;
-
-    for (int v = 0; v < listPersonels.size(); v++) {
-        std::vector< std::vector<Event> > tmp = listPersonels[v].getEvents();
-
-        for (int u = 0; u < 20; u++) {
-            std::cout << tmp[0][u].getIntensity() << " " << tmp[0][u].getTime() << std::endl;
-        }
-    }
 }
